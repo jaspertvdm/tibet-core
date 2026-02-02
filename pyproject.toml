@@ -30,7 +30,7 @@ requires-python = ">=3.9"
 
 [project.urls]
 Homepage = "https://humotica.com"
-Repository = "https://github.com/humotica/tibet-core"
+Repository = "https://github.com/jaspertvdm/tibet-core"
 Documentation = "https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/"
 "IETF Draft" = "https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/"
 
