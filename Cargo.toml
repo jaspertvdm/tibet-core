@@ -1,0 +1,85 @@
+[package]
+name = "tibet-core"
+version = "0.1.1"
+edition = "2021"
+authors = ["Jasper van de Meent <jasper@humotica.nl>", "Root AI <root_idd@humotica.nl>"]
+description = "TIBET: Transaction/Interaction-Based Evidence Trail - The Linux of AI Provenance"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/humotica/tibet-core"
+keywords = ["provenance", "audit", "ai", "trust", "6g"]
+categories = ["authentication", "cryptography"]
+readme = "README.md"
+
+[lib]
+name = "tibet_core"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std"]
+std = ["serde_json", "alloc"]
+alloc = []
+python = ["pyo3", "std"]
+wasm = ["wasm-bindgen", "std"]
+
+[dependencies]
+# Crypto - ed25519 signatures
+ed25519-dalek = { version = "2.1", default-features = false, features = ["rand_core"] }
+rand_core = { version = "0.6", default-features = false }
+
+# Serialization
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1.0", optional = true }
+
+# UUID generation (base - features added per target)
+uuid = { version = "1.0", default-features = false, features = ["v4"] }
+
+# Timestamps (base - features added per target)
+chrono = { version = "0.4", default-features = false }
+
+# Python bindings (optional) - 0.23 for Python 3.13 support
+pyo3 = { version = "0.23", features = ["extension-module"], optional = true }
+
+# WASM bindings (optional)
+wasm-bindgen = { version = "0.2", optional = true }
+
+# Hex encoding for signatures
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+
+# SHA256 for hashing
+sha2 = { version = "0.10", default-features = false }
+
+# ============================================
+# NATIVE (non-WASM) dependencies
+# ============================================
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Native: use OS randomness and system clock
+getrandom = { version = "0.2" }
+rand_core = { version = "0.6", features = ["std", "getrandom"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+uuid = { version = "1.0", default-features = false, features = ["v4", "std"] }
+ed25519-dalek = { version = "2.1", features = ["rand_core", "std"] }
+serde = { version = "1.0", features = ["derive", "std"] }
+hex = { version = "0.4", features = ["std", "alloc"] }
+sha2 = { version = "0.10", features = ["std"] }
+
+# ============================================
+# WASM (browser) dependencies
+# ============================================
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# WASM: use JS crypto and Date
+getrandom = { version = "0.2", features = ["js"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "wasmbind"] }
+uuid = { version = "1.0", default-features = false, features = ["v4", "js"] }
+
+[dev-dependencies]
+rand = "0.8"
+
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = true          # Link-time optimization
+codegen-units = 1   # Single codegen unit for smaller binary
+strip = true        # Strip symbols
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false    # Skip wasm-opt (bulk-memory compatibility)
