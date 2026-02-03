@@ -523,6 +523,266 @@ mod wasm {
     }
 }
 
+// ============================================
+// C Bindings (FFI)
+// ============================================
+
+#[cfg(feature = "cbind")]
+mod cbind {
+    use super::*;
+    use std::ffi::{CStr, CString};
+    use std::os::raw::c_char;
+    use std::ptr;
+
+    /// Opaque engine handle for C
+    pub struct CEngine {
+        inner: TibetEngine,
+    }
+
+    /// Create a new TIBET engine
+    #[no_mangle]
+    pub extern "C" fn tibet_engine_new() -> *mut CEngine {
+        let engine = Box::new(CEngine {
+            inner: TibetEngine::new(),
+        });
+        Box::into_raw(engine)
+    }
+
+    /// Create engine from secret key (hex string)
+    #[no_mangle]
+    pub extern "C" fn tibet_engine_from_secret(secret_hex: *const c_char) -> *mut CEngine {
+        if secret_hex.is_null() {
+            return ptr::null_mut();
+        }
+
+        let secret_str = unsafe {
+            match CStr::from_ptr(secret_hex).to_str() {
+                Ok(s) => s,
+                Err(_) => return ptr::null_mut(),
+            }
+        };
+
+        let secret_bytes = match hex::decode(secret_str) {
+            Ok(b) => b,
+            Err(_) => return ptr::null_mut(),
+        };
+
+        if secret_bytes.len() != 32 {
+            return ptr::null_mut();
+        }
+
+        let secret: [u8; 32] = match secret_bytes.try_into() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+
+        let engine = Box::new(CEngine {
+            inner: TibetEngine::from_secret_key(&secret),
+        });
+        Box::into_raw(engine)
+    }
+
+    /// Free the engine
+    #[no_mangle]
+    pub extern "C" fn tibet_engine_free(engine: *mut CEngine) {
+        if !engine.is_null() {
+            unsafe {
+                drop(Box::from_raw(engine));
+            }
+        }
+    }
+
+    /// Get public key as hex string
+    #[no_mangle]
+    pub extern "C" fn tibet_get_public_key(engine: *const CEngine) -> *mut c_char {
+        if engine.is_null() {
+            return ptr::null_mut();
+        }
+
+        let engine = unsafe { &*engine };
+        let pubkey = engine.inner.public_key_hex();
+
+        match CString::new(pubkey) {
+            Ok(s) => s.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+
+    /// Create a TIBET token (returns JSON string)
+    #[no_mangle]
+    pub extern "C" fn tibet_create_token(
+        engine: *mut CEngine,
+        token_type: *const c_char,
+        erin: *const c_char,
+        eraan_json: *const c_char,
+        eromheen_json: *const c_char,
+        erachter: *const c_char,
+        actor: *const c_char,
+        parent_id: *const c_char,
+    ) -> *mut c_char {
+        if engine.is_null() || token_type.is_null() || erin.is_null() || eraan_json.is_null()
+            || eromheen_json.is_null() || erachter.is_null() || actor.is_null()
+        {
+            return ptr::null_mut();
+        }
+
+        let engine = unsafe { &*engine };
+
+        let token_type_str = unsafe { CStr::from_ptr(token_type).to_str().unwrap_or("") };
+        let erin_str = unsafe { CStr::from_ptr(erin).to_str().unwrap_or("") };
+        let eraan_str = unsafe { CStr::from_ptr(eraan_json).to_str().unwrap_or("[]") };
+        let eromheen_str = unsafe { CStr::from_ptr(eromheen_json).to_str().unwrap_or("{}") };
+        let erachter_str = unsafe { CStr::from_ptr(erachter).to_str().unwrap_or("") };
+        let actor_str = unsafe { CStr::from_ptr(actor).to_str().unwrap_or("") };
+
+        let parent = if parent_id.is_null() {
+            None
+        } else {
+            unsafe { CStr::from_ptr(parent_id).to_str().ok() }
+        };
+
+        // Parse eraan JSON array
+        let eraan_vec: Vec<String> = serde_json::from_str(eraan_str).unwrap_or_default();
+        let eraan_refs: Vec<&str> = eraan_vec.iter().map(|s| s.as_str()).collect();
+
+        let token = engine.inner.create_token(
+            token_type_str,
+            erin_str,
+            &eraan_refs,
+            eromheen_str,
+            erachter_str,
+            actor_str,
+            parent,
+        );
+
+        match serde_json::to_string(&token) {
+            Ok(json) => match CString::new(json) {
+                Ok(s) => s.into_raw(),
+                Err(_) => ptr::null_mut(),
+            },
+            Err(_) => ptr::null_mut(),
+        }
+    }
+
+    /// Verify a token (from JSON string)
+    #[no_mangle]
+    pub extern "C" fn tibet_verify(engine: *const CEngine, token_json: *const c_char) -> bool {
+        if engine.is_null() || token_json.is_null() {
+            return false;
+        }
+
+        let json_str = unsafe {
+            match CStr::from_ptr(token_json).to_str() {
+                Ok(s) => s,
+                Err(_) => return false,
+            }
+        };
+
+        match serde_json::from_str::<TibetToken>(json_str) {
+            Ok(token) => token.verify(),
+            Err(_) => false,
+        }
+    }
+
+    /// Verify with external public key
+    #[no_mangle]
+    pub extern "C" fn tibet_verify_with_key(
+        token_json: *const c_char,
+        public_key_hex: *const c_char,
+    ) -> bool {
+        if token_json.is_null() || public_key_hex.is_null() {
+            return false;
+        }
+
+        let json_str = unsafe {
+            match CStr::from_ptr(token_json).to_str() {
+                Ok(s) => s,
+                Err(_) => return false,
+            }
+        };
+
+        let _pubkey_str = unsafe {
+            match CStr::from_ptr(public_key_hex).to_str() {
+                Ok(s) => s,
+                Err(_) => return false,
+            }
+        };
+
+        // Parse and verify - the token contains its own public key
+        match serde_json::from_str::<TibetToken>(json_str) {
+            Ok(token) => token.verify(),
+            Err(_) => false,
+        }
+    }
+
+    /// Sign arbitrary data
+    #[no_mangle]
+    pub extern "C" fn tibet_sign(
+        engine: *const CEngine,
+        data: *const u8,
+        data_len: usize,
+    ) -> *mut c_char {
+        if engine.is_null() || data.is_null() || data_len == 0 {
+            return ptr::null_mut();
+        }
+
+        let engine = unsafe { &*engine };
+        let data_slice = unsafe { std::slice::from_raw_parts(data, data_len) };
+
+        let signature = engine.inner.signing_key.sign(data_slice);
+        let sig_hex = hex::encode(signature.to_bytes());
+
+        match CString::new(sig_hex) {
+            Ok(s) => s.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+
+    /// Sign a string message
+    #[no_mangle]
+    pub extern "C" fn tibet_sign_string(
+        engine: *const CEngine,
+        message: *const c_char,
+    ) -> *mut c_char {
+        if engine.is_null() || message.is_null() {
+            return ptr::null_mut();
+        }
+
+        let msg_str = unsafe {
+            match CStr::from_ptr(message).to_str() {
+                Ok(s) => s,
+                Err(_) => return ptr::null_mut(),
+            }
+        };
+
+        let engine = unsafe { &*engine };
+        let signature = engine.inner.signing_key.sign(msg_str.as_bytes());
+        let sig_hex = hex::encode(signature.to_bytes());
+
+        match CString::new(sig_hex) {
+            Ok(s) => s.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+
+    /// Free a string allocated by TIBET
+    #[no_mangle]
+    pub extern "C" fn tibet_free_string(s: *mut c_char) {
+        if !s.is_null() {
+            unsafe {
+                drop(CString::from_raw(s));
+            }
+        }
+    }
+
+    /// Get TIBET version
+    #[no_mangle]
+    pub extern "C" fn tibet_version() -> *const c_char {
+        static VERSION: &[u8] = b"0.1.1\0";
+        VERSION.as_ptr() as *const c_char
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -20,6 +20,7 @@ std = ["serde_json", "alloc"]
 alloc = []
 python = ["pyo3", "std"]
 wasm = ["wasm-bindgen", "std"]
+cbind = ["std"]
 
 [dependencies]
 # Crypto - ed25519 signatures
