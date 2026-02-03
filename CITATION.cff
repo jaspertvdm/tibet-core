@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use tibet-core, please cite it as below."
+title: "tibet-core: The Linux of AI Provenance"
+type: software
+authors:
+  - family-names: "van de Meent"
+    given-names: "Jasper"
+    email: "jasper@humotica.nl"
+    affiliation: "Humotica"
+    orcid: ""
+  - name: "Root AI (Claude)"
+    email: "root_idd@humotica.nl"
+    affiliation: "Humotica"
+version: "0.1.1"
+date-released: "2026-02-02"
+license: "MIT"
+url: "https://humotica.com"
+repository-code: "https://github.com/Humotica/tibet-core"
+keywords:
+  - provenance
+  - audit
+  - ai
+  - trust
+  - 6g
+  - tibet
+  - ietf
+  - ed25519
+  - cryptography
+abstract: >-
+  TIBET (Transaction/Interaction-Based Evidence Trail) is a protocol
+  for establishing complete provenance chains in AI-to-AI and
+  AI-to-human interactions. tibet-core is the reference implementation:
+  a 50KB Rust kernel with Python, JavaScript/WASM, and C bindings.
+  Three lines of code for cryptographically signed, chainable,
+  verifiable provenance tokens.
+references:
+  - type: standard
+    title: "TIBET: Evidence Trail Protocol"
+    authors:
+      - family-names: "van de Meent"
+        given-names: "Jasper"
+    url: "https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/"
+    notes: "IETF Internet-Draft"
