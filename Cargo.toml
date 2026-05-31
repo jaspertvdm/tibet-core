@@ -1,6 +1,6 @@
 [package]
 name = "tibet-core"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Jasper van de Meent <jasper@humotica.nl>", "Root AI <root_idd@humotica.nl>"]
 description = "TIBET: Time-Intent-Based Event Tokens — forward-only causal substrate for AI provenance. OSAPI-pair with jis-core (identity + intent authority). Snapshot/restore = chain-position + fork, never time-rewind."

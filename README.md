@@ -2,9 +2,11 @@
 
 **The Linux of AI Provenance**
 
+[![Crates.io](https://img.shields.io/crates/v/tibet-core)](https://crates.io/crates/tibet-core)
 [![PyPI](https://img.shields.io/pypi/v/tibet-core)](https://pypi.org/project/tibet-core/)
 [![npm](https://img.shields.io/npm/v/tibet-core)](https://www.npmjs.com/package/tibet-core)
 [![IETF Draft](https://img.shields.io/badge/IETF-draft--vandemeent--tibet--provenance-blue)](https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/)
+[![Whitepaper](https://img.shields.io/badge/Zenodo-DOI:10.5281/zenodo.18712238-green)](https://doi.org/10.5281/zenodo.18712238)
 
 A minimal, embeddable provenance engine for any device. From microcontrollers to cloud servers.
 
@@ -184,12 +186,32 @@ A package with only one of the two is **free-floating tooling**, outside the aud
 | tibet-core (Python wheel) | ~2MB |
 | Linux kernel (minimal) | ~300KB |
 
+## Regulatory Compliance
+
+TIBET provides the audit foundation for:
+
+| Standard | TIBET Support |
+|----------|---------------|
+| **EU CRA** (Sep 2026) | Build provenance, SBOM accountability, audit chains |
+| **EU AI Act** | Transparency, automated decision traceability |
+| **GDPR Art. 22** | Automated decision-making audit trails |
+| **NIS2** | Continuous logging, incident snapshots |
+| **ISO 5338** | AI lifecycle traceability |
+| **ISO 27001** | Information security audit trails |
+| **SOC 2** | Trust service criteria evidence |
+| **BIO2** | Government security baseline |
+| **OWASP** | Security event provenance |
+
+TIBET makes compliance architectural, not bolted-on.
+
 ## IETF Standardization
 
-TIBET is being standardized at the IETF:
+TIBET and its companion protocols are being standardized at the IETF:
 
-- **[draft-vandemeent-tibet-provenance](https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/)** - Evidence Trail Protocol
-- **[draft-vandemeent-jis-identity](https://datatracker.ietf.org/doc/draft-vandemeent-jis-identity/)** - JTel Identity Standard
+- **[draft-vandemeent-tibet-provenance](https://datatracker.ietf.org/doc/draft-vandemeent-tibet-provenance/)** — Time-Intent-Based Event Tokens
+- **[draft-vandemeent-jis-identity](https://datatracker.ietf.org/doc/draft-vandemeent-jis-identity/)** — JTel Identity Standard
+- **[draft-vandemeent-upip-process-integrity](https://datatracker.ietf.org/doc/draft-vandemeent-upip-process-integrity/)** — Universal Process Integrity Protocol
+- **[draft-vandemeent-ains-discovery](https://datatracker.ietf.org/doc/draft-vandemeent-ains-discovery/)** — AInternet Name Service
 
 ## W3C Alignment
 
