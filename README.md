@@ -10,9 +10,11 @@ A minimal, embeddable provenance engine for any device. From microcontrollers to
 
 ## What is TIBET?
 
-**T**ransaction/**I**nteraction-**B**ased **E**vidence **T**rail
+**T**ime-**I**ntent-**B**ased **E**vent **T**okens
 
-TIBET captures the four dimensions of every AI action:
+TIBET is the **causal truth-layer** of AI provenance. Every action becomes a token that records *when* it happened (time), *what intent* drove it (intent), *what the event was* (event), and *how it links to what came before* (chain). The chain is **forward-only** — there is no protocol-level way to rewrite time — which eliminates an entire class of provenance-spoofing attacks by construction (see *Forward-only causal substrate* below).
+
+Each token captures four dimensions of the action:
 
 | Dimension | Dutch | Meaning |
 |-----------|-------|---------|
@@ -131,6 +133,30 @@ response = engine.create_token(
 print(f"Parent: {request.id}")
 print(f"Child parent_id: {response.parent_id}")  # Same as request.id
 ```
+
+## Forward-only causal substrate
+
+TIBET's foundational axiom: **snapshot/restore = chain-position + fork, NEVER time-rewind.**
+
+In a typical "audit log" you can in principle replay history and overwrite earlier entries. TIBET cannot — each token is anchored to its parent by hash. Restoring an earlier state means *forking* a new chain-position from there; the original chain stays intact. Git's mental model, without the rebase/reset/cherry-pick escape hatches.
+
+This single property eliminates an entire class of provenance-spoofing attacks by construction, because there is no syntax in the protocol for time-rewriting an action that has already happened.
+
+## TIBET + JIS = OSAPI bootstrap-pair
+
+`tibet-core` is one half of the bootstrap-pair; [`jis-core`](https://crates.io/crates/jis-core) is the other.
+
+- **TIBET** writes the *causal truth* — what happened, when, in what order
+- **JIS** writes the *identity authority* — who signed for the action, with what intent
+
+Every package in the Humotica ecosystem bootstraps via both:
+
+```rust
+use tibet_core::TibetEngine;
+// + use jis_core::Identity;   // bootstraps the actor + intent claim
+```
+
+A package with only one of the two is **free-floating tooling**, outside the audit substrate. A package with both is **inside the substrate** — every emit is signed (JIS) and forks the causal chain (TIBET), verifiably and falsifiably.
 
 ## Why TIBET?
 
